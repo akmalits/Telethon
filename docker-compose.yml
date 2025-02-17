@@ -1,0 +1,47 @@
+services:
+  telegram-listener-account:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram-listener-account
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - telegram-data-account:/app/data
+    stdin_open: true
+    tty: true
+    restart: always
+    networks:
+      - forwarder
+    command: python listener.py  # Override the default command to run the listener
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload
+    depends_on:
+      - telegram-listener-account
+    networks:
+      - forwarder
+
+  cloudflared:
+    image: cloudflare/cloudflared
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --url http://web:3002
+    depends_on:
+      - web
+    restart: always
+    networks:
+      - forwarder
+
+volumes:
+  telegram-data-account:
+
+networks:
+  forwarder:
+    driver: bridge
