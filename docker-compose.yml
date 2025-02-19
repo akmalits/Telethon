@@ -32,6 +32,8 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared
+    environment:
+      - CLOUDFLARE_TOKEN=${CLOUDFLARE_TOKEN}  # Use environment variable for the token
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN} --url http://web:3002
     depends_on:
       - web
